@@ -4,8 +4,6 @@ $(document).ready(function () {
         on: 'hover'
     });
 
-    
-
     const url = window.location;
     const path = url.pathname;
     if (path == "/tenant_detail.html") {
@@ -13,6 +11,8 @@ $(document).ready(function () {
         getTenant(tenant_id)
         getTenantMembers(tenant_id)
         getBillings(tenant_id)
+        getRenewalList()
+        getRechargeList()
     }
 
     if (path == "/tenant.html") {
@@ -51,14 +51,13 @@ function getTenantList() {
 
         tenants.forEach(function (tenant, element_index, element_array) { 
             str += `<tr>
-                        <td>`+tenant["name"]+`<br /></td>
+                        <td><a href="#" onClick="useTenant(`+tenant["tenant_id"]+`)">`+tenant["name"]+`</a></td>
                         <td>`+tenant["current_user_role"]+`</td>
-                        <td>`+tenant["status"]+`</td>
+                        <td>`+tenant["status_name"]+`</td>
                         <td>`+tenant["member_count"]+`</td>
-                        <td>`+tenant["billing_type"]+`</td>
+                        <td>`+tenant["billing_type_name"]+`<br><span style="color:#5b5b5b9e">`+globalFrontendText["tenant_billing_end"]+`: `+tenant["billing_end"]+`</span></td>
                         <td>`+tenant["billing_quota"]+`</td>
-                        <td>`+tenant["billing_end"]+`</td>
-                        <td><a href="#" onClick="useTenant(`+tenant["tenant_id"]+`)">`+globalFrontendText["enter"]+`</a> | <a href="#" onClick="showTenant(`+tenant["tenant_id"]+`)">`+globalFrontendText["show_tenant"]+`</a> | <a href="setting.html?tenant_id=`+tenant["tenant_id"]+`">`+globalFrontendText["configuration"]+`</a></td>
+                        <td><a href="#" onClick="showTenant(`+tenant["tenant_id"]+`)">`+globalFrontendText["show_tenant"]+`</a> | <a href="setting.html?tenant_id=`+tenant["tenant_id"]+`">`+globalFrontendText["configuration"]+`</a></td>
                     </tr>`
             $("#tenant_list").html(str)
         });
@@ -92,12 +91,16 @@ function getTenant(tenant_id) {
         $("#tenant_description").val(tenants.description)
         $("#tenant_employee_count").val(tenants.employee_count)
         $("#tenant_industry_type").val(tenants.industry_type)
-        $("#tenant_status").val(tenants.status)
+        $("#tenant_status").val(tenants.status_name)
         $("#tenant_created_at").val(tenants.created_at)
-        $("#tenant_billing_end").val(tenants.billing_end)
+        $("#tenant_billing_end").val(tenants.billing_end + " - " + tenants.plus_name)
         $("#members_count").text(tenants.member_count)
 
-        $("#billing_info").text(tenants.billing_quota+"/"+tenants.billing_type)
+        $("#renewal_company").text(tenants.name + " | " + tenants.billing_end + " - " + tenants.plus_name)
+        $("#recharge_company").text(tenants.name)
+
+        $("#billing_info").text(globalFrontendText["task_limit_msg"] + tenants.billing_quota)
+        $("#codepower_info").text(globalFrontendText["code_power"] + tenants.code_power)
     }
 
     sendAjaxRequest('/tenant/get_one', 'GET', requestData, successCallback, alertErrorCallback, true, false)
@@ -128,6 +131,14 @@ function getTenantMembers(tenant_id) {
 
 function addMember() {
     $('#add_member').modal('show');
+}
+
+function Renewal() {
+    $('#renewal_plus').modal('show');
+}
+
+function Recharge() {
+    $('#recharge_cf').modal('show');
 }
 
 function invite() {
@@ -163,9 +174,18 @@ function getBillings(tenant_id) {
         var str = ""
 
         users.forEach(function (user, element_index, element_array) { 
+            expired_at = ""
+            code_power = 0
+            if (user["bill_type"].startsWith("Income_")) {
+                expired_at = "<br /><span style='color:#5b5b5b9e'>"+globalFrontendText["expired_at"]+user["expired_at"]+"</span>"
+                code_power = '+' + user["amount"] + '('+user['amount_left']+')' + expired_at
+            } else {
+                code_power = '-' + user["amount_used"]
+            }
             str += `<tr>
-                        <td>`+user["bill_type"]+`<br /></td>
+                        <td>`+user["bill_type_name"]+`<br /></td>
                         <td>`+user["bill_user"]+`</td>
+                        <td>`+code_power+`</td>
                         <td>`+user["created_at"]+`</td>
                         <td><a href="/?task_id=`+user["external_info"]+`">`+user["remarks"]+`</a></td>
                     </tr>`
@@ -174,4 +194,131 @@ function getBillings(tenant_id) {
     }
 
     sendAjaxRequest('/tenant/get_billings', 'GET', requestData, successCallback, alertErrorCallback, true, false)
+}
+
+function getRechargeList() {
+    var requestData = {}
+
+    successCallback = function(data) {
+        code_power = data.data.code_power
+
+        str = `
+            <div class="item" style="padding: 10px 20px">
+                <div class="right floated content">
+                    <div class="ui right labeled input">
+                        <input type="number" placeholder="" value=10 id="cf_number">
+                        <div class="ui button basic blue" onClick="pay_cf('`+data.data.payment_method+`', 'CODE_POWER', this)">
+                        <i class="yen sign icon"></i>
+                        `+globalFrontendText["recharge"]+`
+                        </div>
+                    </div>
+                </div>
+                <i class="chess queen icon yellow big"></i>
+                <div class="content">
+                `+code_power["value"]+`/`+code_power["key"]+`
+                </div>
+            </div>
+            `
+        $("#recharge_list").html(str)
+    }
+
+    sendAjaxRequest('/pay/get_price', 'GET', requestData, successCallback, alertErrorCallback, true, false)
+}
+
+function getRenewalList() {
+    var requestData = {}
+
+    successCallback = function(data) {
+        plus = data.data.plus
+
+        str = `
+            <div class="item" style="padding: 10px 20px">
+                <div class="right floated content">
+                    <div class="ui button blue" onClick="pay('`+data.data.payment_method+`', 'BASIC_MONTHLY', this, 'basic_number')"><i class="yen sign icon"></i>`+globalFrontendText["renewal"]+`</div>
+                </div>
+                <div class="right floated content">
+                    <select class="ui fluid dropdown" id="basic_number">
+                        <option value="1">1</option>
+                        <option value="3">3</option>
+                        <option value="6">6</option>
+                        <option value="12">12</option>
+                    </select>
+                </div>
+                <i class="chess queen icon yellow big"></i>
+                <div class="content">
+                `+plus["BASIC_MONTHLY"]["value"]+`/`+plus["BASIC_MONTHLY"]["key"]+`
+                </div>
+            </div>
+            <div class="item" style="padding: 10px 20px">
+                <div class="right floated content">
+                    <div class="ui button blue" onClick="pay('`+data.data.payment_method+`', 'PRO_MONTHLY', this, 'pro_number')"><i class="yen sign icon"></i>`+globalFrontendText["renewal"]+`</div>
+                </div>
+                <div class="right floated content">
+                    <select class="ui fluid dropdown" id="pro_number">
+                        <option value="1">1</option>
+                        <option value="3">3</option>
+                        <option value="6">6</option>
+                        <option value="12">12</option>
+                    </select>
+                </div>
+                <i class="chess queen icon orange big"></i>
+                <div class="content">
+                `+plus["PRO_MONTHLY"]["value"]+`/`+plus["PRO_MONTHLY"]["key"]+`
+                </div>
+            </div>
+            `
+        $("#renewal_list").html(str)
+    }
+
+    sendAjaxRequest('/pay/get_price', 'GET', requestData, successCallback, alertErrorCallback, true, false)
+}
+
+function pay(payment_method, plus_type, ele, number_id) {
+    $(ele).addClass("loading")
+    $(ele).addClass("disabled")
+
+    var requestData = JSON.stringify({ 
+        'payment_method': payment_method, 
+        'plus_type': plus_type,
+        'number': $("#" + number_id).val(),
+        'tenant_id': getTenantID(),
+    })
+ 
+    successCallback = function(data) {
+        window.location.href = data.data
+    }
+
+    errorCallback = function(error) {
+        $("#invite-message").html(error)
+        $("#invite-message").fadeOut().fadeIn()
+        $("#invite_btn").removeClass("disabled")
+        $("#invite_btn").removeClass("loading")
+    }
+
+    sendAjaxRequest('/pay/create_pay', "POST", requestData, successCallback, alertErrorCallback, true, false)
+}
+
+function pay_cf(payment_method, plus_type, ele) {
+    $(ele).addClass("loading")
+    $(ele).addClass("disabled")
+
+    var requestData = JSON.stringify({ 
+        'payment_method': payment_method, 
+        'tenant_id': getTenantID(),
+        'number': $("#cf_number").val(),
+        'plus_type': plus_type,
+    })
+ 
+    successCallback = function(data) {
+        window.location.href = data.data
+    }
+
+    errorCallback = function(error) {
+        $("#invite-message").html(error)
+        $("#invite-message").fadeOut().fadeIn()
+        $("#invite_btn").removeClass("disabled")
+        $("#invite_btn").removeClass("loading")
+    }
+
+    sendAjaxRequest('/pay/create_pay', "POST", requestData, successCallback, alertErrorCallback, true, false)
 }
