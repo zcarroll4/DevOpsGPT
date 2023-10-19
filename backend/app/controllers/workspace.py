@@ -70,7 +70,7 @@ def gitpush():
     Requirement.update_requirement(requirement_id=requirementID, status=REQUIREMENT_STATUS_Completed)
 
     if not GIT_ENABLED:
-        raise Exception(_("Failed to push code.")+f" You did not set Git parameters in the configuration file.")
+        raise Exception(_("Failed to push code.")+" You did not set Git parameters in the configuration file.")
     else:
         success, msg = pushCode(wsPath, gitPath, fatureBranch, commitMsg, gitConfigList)
 
@@ -99,7 +99,7 @@ def resetWorkspace():
     Requirement.update_requirement(requirement_id=requirementID, status=REQUIREMENT_STATUS_Completed)
 
     if not GIT_ENABLED:
-        raise Exception(_("Failed to reset code.")+f" You did not set Git parameters in the configuration file.")
+        raise Exception(_("Failed to reset code.")+" You did not set Git parameters in the configuration file.")
     else:
         success, msg = gitResetWorkspace(wsPath, gitPath, fatureBranch, commitMsg, gitConfigList)
 

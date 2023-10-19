@@ -6,7 +6,7 @@ from app.pkgs.prompt.code_interface import CodeInterface
 
 class CodeBasic(CodeInterface):
     def aiReferenceRepair(self, requirementID, newCode, referenceCode, fileTask, filePath):
-        prompt = f"""
+        prompt = """
     As a senior full stack developer. Your task is to analyze the following "reference code" style and specification (including but not limited to: naming conventions, coding styles, import package specifications, comment specifications, etc.) line by line, and use this to correct the "development task corresponding code" with the "reference code" style and specification is inconsistent. Ensure that the newly generated code can conform to the overall code style and specification of the program as well as the reference code without compromising the "development task". The consolidated code responds according to the response format example.
 
     reference code:
@@ -36,7 +36,7 @@ class CodeBasic(CodeInterface):
 
 
     def aiAnalyzeError(self, requirementID, message, filePath):
-        prompt = f"""
+        prompt = """
     As a senior full stack developer. Your task is to analyze code execution error messages, return files that may need to be modified, and analyze the solution. Follow the response format example.
 
     error messages:
@@ -56,7 +56,7 @@ class CodeBasic(CodeInterface):
 
 
     def aiFixError(self, requirementID, solution, code, filePath, type):
-        prompt = f"""
+        prompt = """
     As a senior full stack developer. Your task is to fix errors in the "initial code". Please fix the problems in the "initial code" according to the solution, taking care not to affect other code functions. The consolidated code responds according to the response format example.
 
     initial code:
@@ -85,7 +85,7 @@ class CodeBasic(CodeInterface):
 
         jsonData = {"reasoning": goodCodeRe, "code": code}
 
-        prompt = f"""
+        prompt = """
 NOTICE
 Role: As a senior full stack developer, you are task is to modify the code according to the modification suggestions. 
 
@@ -117,7 +117,7 @@ The response must be code.
         return jsonData, success
     
     def aiReviewCode(self, requirementID, fileTask, code, filePath):
-        prompt = f"""
+        prompt = """
 NOTICE
 Role: You are a professional software engineer, Your task is to review the code. 
 
@@ -147,7 +147,7 @@ This code is very important and you will review it carefully
 
 
     def aiMergeCode(self, requirementID, task, baseCode, newCode, filePath):
-        prompt = f"""
+        prompt = """
     As a senior full stack developer. Your task is to integrate with existing code according to the "Development Task" and "Development Task corresponding code" provided below. In the process of integrating code, you must use the existing code as a baseline, and always be careful to ensure that the functionality of the existing code body is not affected. The consolidated code responds according to the response format example.
 
     Development Task:
@@ -177,7 +177,7 @@ This code is very important and you will review it carefully
 
 
     def aiGenCode(self, requirementID, fileTask, newTask, newCode, filePath):
-        prompt = f"""
+        prompt = """
     As a senior full stack developer. you need to modify the "basic code" based on the "change suggestions" and return all the complete code that works well. The code style is consistent with the "base code", try not to break the original function.
 
     change suggestions:
